@@ -1,0 +1,21 @@
+{
+  "name": "alvara_rpg",
+  "version": "1.0.0",
+  "description": "Alvara NFT smart contract",
+  "main": "index.js",
+  "author": "urdnot.imp@gmail.com",
+  "license": "MIT",
+  "devDependencies": {
+    "@chainlink/contracts": "^0.4.0",
+    "@openzeppelin/contracts": "3.4.2-solc-0.7",
+    "@openzeppelin/test-helpers": "^0.5.15",
+    "chai": "^4.3.6",
+    "ganache-cli": "^6.12.2",
+    "truffle": "^5.5.10"
+  },
+  "scripts": {
+    "ganache": "npx ganache-cli -d",
+    "deploy": "npx truffle migrate --reset",
+    "test": "npx truffle exec --network development ./scripts/index.js"
+  }
+}
