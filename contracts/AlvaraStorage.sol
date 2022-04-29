@@ -401,9 +401,4 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
         }
         return 0x1ffffffffff;
     }
-
-    function foo(uint256 tokenId) public pure returns (uint256)
-    {
-        return PRIME_DELTA * tokenId;
-    }
 }
