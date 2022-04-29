@@ -17,20 +17,20 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     using SafeMath for uint256;
 
     uint256[14] private data = [
-        442035311901958114253262039277997779368656856254343608684205718628205312,
-        4168934543252561356552492013905839484062179059586461823289725382081668069,
-        44555949667939575737454117233525195637186969461171686435427493806235189792,
-        95409749181617759665478207487868908814917923760273454797193385805242630677028,
-        71917865862099451788948165015890869163158145297902900157135354875175346774208,
-        1966997761549456938330745341462801184269830324292361445617255452612820992,
-        57942203503281351009795651559959916253376742279146197617463531273563475574752,
-        248462881635641250566501389789569836799378965120941487444843810588720640,
-        3975406106170260009064022236633117388833711189798288726209756392778096640,
-        849292674795864265011141799332131459909744407667883024486236160,
-        59763658964674158498249623203841626313278871022017728015924453565225052965987,
-        11205686055224151158092635641377396914047927831109012469977999416971631990982,
-        22637528534753093119078881748656920224920658657519720605739392613708061880724,
-        44822744260031998229181632608524857198552361171011557015736024830471613448192
+        442089231795292378492553979558389642584151397731854248184706189993443890,
+        57899661428658577028311584790063109321392015358818623725042996113118016332773,
+        44555949667939578422386304870525408155061496401624472889590588105799239456,
+        50885196463875972582136975801266751029221129727518987734643775125486078816775,
+        3618518760802193349194717759452661494648182980819855478097313952385353588848,
+        57896300172835093587115484151242583914370927693117687649557023238165657421576,
+        4088866831934005279866350378079803774965764758490077251699747345481625728,
+        65421870149881491619000536920944998198132592280121818326142384336168599552,
+        7017695699001931663428269821024085524489137862675062550812086124997413437440,
+        112283131184030906614852317136385368391826205800245892425408960556199149897795,
+        7244300952591203420517263070455909608367035564863450062630367468387035127936,
+        14941149386194694715495202826702456979225969424880580076593311032301672726792,
+        30813812809735035576396240623990451011887584697203943917796486177089992523776,
+        905537618257756707137082709075435421644945396532852403862059378171764015104
     ];
 
     uint public constant TOKEN_PRICE = 80000000000000000; // 0.08 ETH
@@ -38,16 +38,14 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     uint16 public constant MAX_TOKENS = 10000;
     uint8 public constant DEVELOPERS_COUNT = 5;
     uint8 public constant RCATEGORIES_COUNT = 10;
-    uint8 public constant MAX_ATTRIBUTE_COUNT = 7;
     uint public constant MAX_TOKENS_PER_PUBLIC_MINT = 10; // Only applies during public sale.
-    address public constant CHARITY_ADDRESS = 0x0000000000000000000000000000000000000000; //TODO: put charity address!
+    address public constant CHARITY_ADDRESS = 0x1dF62f291b2E969fB0849d99D9Ce41e2F137006e; //TODO: put charity address!
 
     mapping(uint256 => uint256) private _data;
     mapping(address => uint) public presaleReservations;
 
-    uint public numPreSaleReservations = 0;
     uint public forDonation = 0;
-    uint public RNG_VRF_RESULT;
+    uint private numPreSaleReservations = 0;
     uint private randomModifier = 2;
     uint private generatedTokens = 0;
 
@@ -69,13 +67,13 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
         vrfkeyHash = 0xAA77729D3466CA35AE8D28B3BBAC7CC36A5031EFDC430821C02BC31A238AF445;
         vrfFee = 2 * 10 ** 18; // 2 LINK (Varies by network)
 
-        _setBaseURI("https://alvara.io/tokens/");
+        _setBaseURI("https://alvara.io/token/");
     }
 
     function requestVRFRandomness() public onlyOwner returns (bytes32 requestId)
     {
         require(curCombNumber[0] == 0, "Already generated!");
-        require(LINK.balanceOf(address(this)) >= vrfFee, "Not enough LINK.");
+        require(LINK.balanceOf(address(this)) >= vrfFee, "Not enough LINK");
         return requestRandomness(vrfkeyHash, vrfFee);
     }
 
@@ -116,17 +114,17 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     function int2Opt(uint16 cid, uint number) private view returns (uint options)
     {
         uint16 categoryEntryShift = 87 /*CATEGORY_ENTRY_SIZE*/ * cid;
-        uint16 attrInfo = uint16(load(categoryEntryShift + 20 /*attr info*/, 11/*attr size*/));
+        uint16 attrInfo = uint16(load(categoryEntryShift + 20 /*ATTR_START_SHIFT*/, 11/*ATTR_START_SIZE + ATTR_COUNT_SIZE*/));
         uint16 attrCount = uint16(attrInfo & 0x7);
-        uint16 attrStart = uint8(attrInfo >> 3);
-        uint16 placeMultiplierShift = 565/*ATTR_TABLE_SHIFT TODO!!!*/ + 36 /*ATTR_ENTRY_SIZE*/ * attrStart + 20 /* PLACE_MODIFIER_SHIFT */;
-        uint attrs = load(placeMultiplierShift, 36/*ATTR_ENTRY_SIZE*/ * attrCount - 20);
+        uint16 attrStart = uint8(attrInfo >> 3 /*ATTR_COUNT_SIZE*/);
+        uint16 placeMultiplierShift = 565/*ATTR_TABLE_SHIFT*/ + 36 /*ATTR_ENTRY_SIZE*/ * attrStart + 20 /* PLACE_MULTIPLIER_SHIFT */;
+        uint attrs = load(placeMultiplierShift, 36/*ATTR_ENTRY_SIZE*/ * attrCount - 20/*PLACE_MULTIPLIER_SHIFT*/);
 
         for (uint8 i = 0; i < attrCount; i++)
         {
             uint16 placeMultiplier = uint16(attrs);
-            attrs >>= 36;
-            options <<= 4;
+            attrs >>= 36 /*ATTR_ENTRY_SIZE*/;
+            options <<= 5 /*OPTION_BITSIZE*/;
             options += number / placeMultiplier;
             number = number % placeMultiplier;
         }
@@ -144,9 +142,9 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
         uint16 rangeEnd;
         for (uint8 i = 0; i < RCATEGORIES_COUNT; i++)
         {
-            uint16 rangeSize = uint16(allRanges & 0x1fff);
+            uint16 rangeSize = uint16(allRanges & 0x1fff/*(1 << RCATEGORY_ENTRY_SIZE) - 1*/);
             rangeEnd += rangeSize;
-            allRanges >>= 13;
+            allRanges >>= 13/*RCATEGORY_ENTRY_SIZE*/;
 
             if (rnd < rangeEnd)
             {
@@ -169,23 +167,23 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     {
         uint16 categoryEntryShift = 87 /*CATEGORY_ENTRY_SIZE*/ * (rcid >> 1);
         uint16 included = uint16(load(categoryEntryShift + 43 /*INCLUDED_START_SHIFT*/, 12 /*INCLUDED_START_SIZE+INCLUDED_SIZE_SIZE*/));
-        uint16 includedSize = included & 0xf;
-        uint16 includedStart = included >> 4;
+        uint16 includedSize = included & 0xf /*(1 << INCLUDED_SIZE_SIZE) - 1*/;
+        uint16 includedStart = included >> 4 /*INCLUDED_SIZE_SIZE*/;
         curCombNumber[rcid] = uint32((curCombNumber[rcid] + PRIME_DELTA) % includedSize);
-        uint16 includedEntryShift = 2311/*INCLUDE_TABLE_SHIFT TODO!!!!*/ + 28 /*INCLUDE_ENTRY_SIZE*/ * (includedStart + uint16(curCombNumber[rcid]));
-        options = load(includedEntryShift, 28 /*INCLUDED_ENTRY_SIZE*/);
+        uint16 includedEntryShift = 2455/*INCLUDED_TABLE_SHIFT*/ + 35 /*INCLUDE_ENTRY_SIZE*/ * (includedStart + uint16(curCombNumber[rcid]));
+        options = load(includedEntryShift, 35 /*INCLUDE_ENTRY_SIZE*/);
     }
 
     function isIncluded(uint16 shift, uint16 size, uint options) private view returns (bool)
     {
         for (uint8 i = 0; i < size; i++)
         {
-            uint include = load(shift, 28 /*OPTIONS_DATA_SIZE*/);
+            uint include = load(shift, 35 /*OPTIONS_ARRAY_SIZE*/);
             if (include ^ options == 0)
             {
                 return true;
             }
-            shift += 28 /*INCLUDED_ENTRY_SIZE*/;
+            shift += 35 /*INCLUDE_ENTRY_SIZE*/;
         }
         return false;
     }
@@ -194,16 +192,16 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     {
         for (uint8 i = 0; i < size; i++)
         {
-            uint entry = load(shift, 56 /*IGNORED_ENTRY_SIZE*/);
-            uint positionMask = entry & 0xfffffff;
-            uint ignore = entry >> 28;
+            uint entry = load(shift, 70 /*IGNORE_ENTRY_SIZE*/);
+            uint positionMask = entry & 0x7ffffffff /*(1 << PLACE_MASK_SIZE) - 1*/;
+            uint ignore = entry >> 35 /*IGNORE_MASK_SIZE*/;
 
             if ((options & positionMask) ^ ignore == 0)
             {
                 return true;
             }
 
-            shift += 56 /*IGNORED_ENTRY_SIZE*/;
+            shift += 70 /*IGNORE_ENTRY_SIZE*/;
         }
         return false;
     }
@@ -213,19 +211,20 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
         bool isOk = false;
         uint8 attempts = 0;
         uint16 cid = rcid / 2;
-        uint info = load(87 /*CATEGORY_ENTRY_SIZE*/ * cid + 31 /*info shift*/, 56 /*info size*/);
+        uint info = load(87 /*CATEGORY_ENTRY_SIZE*/ * cid + 31 /*IGNORED_START_SHIFT*/, 56 /*IGNORED_START_SIZE + IGNORED_SIZE_SIZE + INCLUDED_START_SIZE + INCLUDED_SIZE_SIZE + SPACE_SIZE_SIZE*/);
         uint32 spaceSize = uint32(info);
-        uint16 includedSize = uint16((info >> 32) & 0xf);
-        uint16 includedStart = uint8(info >> 36);
-        uint16 ignoredSize = uint16((info >> 44) & 0xf);
-        uint16 ignoredStart = uint8(info >> 48);
-        uint16 ignoredStartShift = 1681 /*IGNORED_TABLE_SHIFT*/ + 56 /*IGNORED_ENTRY_SIZE*/ * ignoredStart;
-        uint16 includedStartShift = 2311 /*INCLUDED_TABLE_SHIFT*/ + 28 /*INCLUDED_ENTRY_SIZE*/ * includedStart;
+        uint16 includedSize = uint16((info >> 32/*SPACE_SIZE_SIZE*/) & 0xf /*(1 << INCLUDED_SIZE_SIZE) - 1*/);
+        uint16 includedStart = uint8(info >> 36/*SPACE_SIZE_SIZE + INCLUDED_SIZE_SIZE*/);
+        uint16 ignoredSize = uint16((info >> 44/*SPACE_SIZE_SIZE + INCLUDED_SIZE_SIZE + INCLUDED_START_SIZE*/) & 0xf/*(1 << IGNORED_SIZE_SIZE) - 1*/);
+        uint16 ignoredStart = uint8(info >> 48/*SPACE_SIZE_SIZE + INCLUDED_SIZE_SIZE + INCLUDED_START_SIZE + IGNORED_SIZE_SIZE*/);
+        uint16 ignoredStartShift = 1825 /*IGNORED_TABLE_SHIFT*/ + 70 /*IGNORE_ENTRY_SIZE*/ * ignoredStart;
+        uint16 includedStartShift = 2455 /*INCLUDED_TABLE_SHIFT*/ + 35 /*INCLUDE_ENTRY_SIZE*/ * includedStart;
 
         do
         {
             curCombNumber[rcid] = uint32((curCombNumber[rcid] + PRIME_DELTA) % spaceSize);
             options = int2Opt(cid, curCombNumber[rcid]);
+
             isOk = true;
 
             if (isIncluded(includedStartShift, includedSize, options))
@@ -258,16 +257,16 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
         // chose random category
         uint16 rcid = chooseRandomCategory();
         uint options = generate(rcid);
-        _data[tokenId] = (rcid << 35) + options;
+        _data[tokenId] = (rcid << 35/*OPTIONS_ARRAY_SIZE*/) | options;
     }
 
     function rerollDna(uint tokenId) internal
     {
         if (_data[tokenId] & (1 << 40)/*reroll flag*/ == 0)
         {
-            uint16 rcid = uint16(_data[tokenId] >> 35);
+            uint16 rcid = uint16(_data[tokenId] >> 35/*OPTIONS_ARRAY_SIZE*/);
             uint options = generate(rcid);
-            _data[tokenId] = (1 << 40)/*reroll flag*/ + (rcid << 35) + options;
+            _data[tokenId] = (1 << 40)/*reroll flag*/ | (rcid << 35/*OPTIONS_ARRAY_SIZE*/) | options;
         }
     }
 
@@ -313,7 +312,7 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     function reserveForPreSale(address[] memory _addresses, uint _numPerAddress) public onlyOwner
     {
         uint numNeeded = _numPerAddress.mul(_addresses.length);
-        require(numPreSaleReservations.add(numNeeded) <= MAX_TOKENS, "Not enough slots.");
+        require(numPreSaleReservations.add(numNeeded) <= MAX_TOKENS, "Not enough slots");
         
         for (uint i = 0; i < _addresses.length; i++)
         {
@@ -325,21 +324,21 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     // Mints tokens.
     function mint(uint _numTokens) public payable
     {
-        require(_numTokens > 0, "Minimum number to mint is 1.");
-        require(saleState > 0, "Sale not open.");
-        require(generatedTokens.add(_numTokens) <= MAX_TOKENS, "Not enough slots.");
+        require(_numTokens > 0, "Minimum number to mint is 1");
+        require(saleState > 0, "Sale not open");
+        require(generatedTokens.add(_numTokens) <= MAX_TOKENS, "Not enough slots");
 
         // This line ensures the minter is paying at enough to cover the tokens.
         uint allSum = TOKEN_PRICE.mul(_numTokens);
-        require(msg.value >= allSum, "Wrong Ether value.");
+        require(msg.value >= allSum, "Wrong Ether value");
 
         if (saleState == 1)
         {
-            require(presaleReservations[msg.sender] >= _numTokens, "Not enough presale slots.");
+            require(presaleReservations[msg.sender] >= _numTokens, "Not enough presale slots");
             presaleReservations[msg.sender] -= _numTokens;
         } else 
         { // 2
-            require(_numTokens <= MAX_TOKENS_PER_PUBLIC_MINT, "Tokens per mint exceeded.");
+            require(_numTokens <= MAX_TOKENS_PER_PUBLIC_MINT, "Tokens per mint exceeded");
         }
         
         for (uint i = 0; i < _numTokens; i++)
@@ -370,16 +369,18 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     {
         require(tokenId >= DEVELOPERS_COUNT, "Developers tokens cannot be burned");
         require(ERC721.ownerOf(tokenId) == msg.sender, "Caller isn't owner");
-        uint256 nftShare = address(this).balance / (totalSupply() - DEVELOPERS_COUNT);
+        uint256 nftShare = (address(this).balance - forDonation) / (totalSupply() - DEVELOPERS_COUNT);
         payable(msg.sender).transfer(nftShare);
+        ERC721._burn(tokenId);
     }
 
     function donateReserved(uint256 tokenId) public payable
     {
         require(tokenId >= DEVELOPERS_COUNT, "Developers tokens cannot be burned");
         require(ERC721.ownerOf(tokenId) == msg.sender, "Caller isn't owner");
-        uint256 nftShare = address(this).balance / (totalSupply() - DEVELOPERS_COUNT);
+        uint256 nftShare = (address(this).balance - forDonation) / (totalSupply() - DEVELOPERS_COUNT);
         payable(CHARITY_ADDRESS).transfer(nftShare);
+        ERC721._burn(tokenId);
     }
 
     /**
@@ -396,13 +397,13 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     {
         if (ERC721._exists(tokenId))
         {
-            return _data[tokenId] & 0xffffffffff;
+            return _data[tokenId] & 0x1ffffffffff;
         }
-        return 0xffffffffff;
+        return 0x1ffffffffff;
     }
 
-    function getMagic() external view returns (uint256)
+    function foo(uint256 tokenId) public pure returns (uint256)
     {
-        return randomModifier * PRIME_DELTA;       
+        return PRIME_DELTA * tokenId;
     }
 }

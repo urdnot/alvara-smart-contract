@@ -16,6 +16,7 @@
   "scripts": {
     "ganache": "npx ganache-cli -d",
     "deploy": "npx truffle migrate --reset",
-    "test": "npx truffle exec --network development ./scripts/index.js"
+    "smart_state": "npx truffle migrate --reset && npx truffle exec --network development ./scripts/index.js",
+    "mocha_test": "npx truffle test"
   }
 }
