@@ -6,4 +6,5 @@ call yarn add ganache-cli --dev
 call yarn add chai --dev
 call yarn add @openzeppelin/test-helpers --dev
 call yarn add @chainlink/contracts --dev
+call yarn add truffle-hdwallet-provider
 call npx truffle init

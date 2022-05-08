@@ -33,14 +33,14 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
         905537618257756707137082709075435421644945396532852403862059378171764015104
     ];
 
-    uint public constant TOKEN_PRICE = 80000000000000000; // 0.08 ETH
+    //uint public constant TOKEN_PRICE = 80000000000000000; // 0.08 ETH Mainnet
+    uint public constant TOKEN_PRICE = 1000000000000000; // 0.001 ETH Rinkeby testnet
     uint32 private constant PRIME_DELTA = 99133;
     uint16 public constant MAX_TOKENS = 10000;
     uint8 public constant DEVELOPERS_COUNT = 5;
     uint8 public constant RCATEGORIES_COUNT = 10;
     uint public constant MAX_TOKENS_PER_PUBLIC_MINT = 10; // Only applies during public sale.
-    address public constant CHARITY_ADDRESS = 0x1dF62f291b2E969fB0849d99D9Ce41e2F137006e; //TODO: put charity address!
-
+    address public constant CHARITY_ADDRESS = 0xC4debFE1ac7B01E67Afe3D61b2a633A960CAf864; //TODO: For test its my address, it should be changed
     mapping(uint256 => uint256) private _data;
     mapping(address => uint) public presaleReservations;
 
@@ -59,20 +59,26 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
 
     constructor()
     ERC721("Alvara NFT", "Alvara")
+    // VRFConsumerBase(
+    //     0xf0d54349aDdcf704F77AE15b96510dEA15cb7952, // Mainnet VRF Coordinator
+    //     0x514910771AF9Ca656af840dff83E8264EcF986CA  // Mainnet LINK Token address
+    //     )
     VRFConsumerBase(
-        0xf0d54349aDdcf704F77AE15b96510dEA15cb7952, // VRF Coordinator
-        0x514910771AF9Ca656af840dff83E8264EcF986CA  // LINK Token
+        0x6168499c0cFfCaCD319c818142124B7A15E857ab, // Rinkeby VRF Coordinator
+        0x01BE23585060835E02B77ef475b0Cc51aA1e0709 // Rinkeby LINK Token address
         )
     {
-        vrfkeyHash = 0xAA77729D3466CA35AE8D28B3BBAC7CC36A5031EFDC430821C02BC31A238AF445;
-        vrfFee = 2 * 10 ** 18; // 2 LINK (Varies by network)
+        //vrfkeyHash = 0xAA77729D3466CA35AE8D28B3BBAC7CC36A5031EFDC430821C02BC31A238AF445; // Mainnet
+        //vrfFee = 2 * 10 ** 18; // 2 LINK (Varies by network)
+        vrfkeyHash = 0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc; // Rinkeby
+        vrfFee = 25 * 10 ** 16; // 0.25 LINK (Rinkeby)
 
         _setBaseURI("https://alvara.io/token/");
     }
 
     function requestVRFRandomness() public onlyOwner returns (bytes32 requestId)
     {
-        require(curCombNumber[0] == 0, "Already generated!");
+        require(curCombNumber[0] != 0, "Already generated!");
         require(LINK.balanceOf(address(this)) >= vrfFee, "Not enough LINK");
         return requestRandomness(vrfkeyHash, vrfFee);
     }
@@ -82,7 +88,7 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
     {
         for (uint8 i = 0; i < RCATEGORIES_COUNT; i++)
         {
-            curCombNumber[i] = uint32(i * _randomness);
+            curCombNumber[i] = uint32((i + 1) * _randomness);
         }
     }
 
@@ -257,7 +263,7 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
         // chose random category
         uint16 rcid = chooseRandomCategory();
         uint options = generate(rcid);
-        _data[tokenId] = (rcid << 35/*OPTIONS_ARRAY_SIZE*/) | options;
+        _data[tokenId] = (uint256(rcid) << 35/*OPTIONS_ARRAY_SIZE*/) | options;
     }
 
     function rerollDna(uint tokenId) internal
@@ -266,7 +272,7 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
         {
             uint16 rcid = uint16(_data[tokenId] >> 35/*OPTIONS_ARRAY_SIZE*/);
             uint options = generate(rcid);
-            _data[tokenId] = (1 << 40)/*reroll flag*/ | (rcid << 35/*OPTIONS_ARRAY_SIZE*/) | options;
+            _data[tokenId] = (1 << 40)/*reroll flag*/ | (uint256(rcid) << 35/*OPTIONS_ARRAY_SIZE*/) | options;
         }
     }
 

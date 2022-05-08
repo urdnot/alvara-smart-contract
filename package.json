@@ -16,7 +16,12 @@
   "scripts": {
     "ganache": "npx ganache-cli -d",
     "deploy": "npx truffle migrate --reset",
-    "smart_state": "npx truffle migrate --reset && npx truffle exec --network development ./scripts/index.js",
-    "mocha_test": "npx truffle test"
+    "local-state": "npx truffle migrate --reset && npx truffle exec --network development ./scripts/index.js",
+    "local-unit": "npx truffle test ./test/AlvaraStorage.test.js",
+    "rinkeby-state": "npx truffle exec --network rinkeby ./scripts/index.js",
+    "rinkeby-unit": "npx truffle test ./test/AlvaraStorage.Rinkeby.test.js"
+  },
+  "dependencies": {
+    "truffle-hdwallet-provider": "^1.0.17"
   }
 }
