@@ -5,15 +5,13 @@ module.exports = async function main (callback)
         // Our code will go here
         const AlvaraStorage = artifacts.require('AlvaraStorage');
         const storage = await AlvaraStorage.deployed();
-        const accounts = await web3.eth.getAccounts();
-        const owner = accounts[0];
-        const other = accounts[1];
 
-        for (let i = 0; i < 15; ++i)
-        {
-            const res = await storage.getData(i);
-            console.log(res.toString());
-        }
+        console.log('Start to init smart contract state...');
+
+        await storage.setBaseURI('https://2cf1-188-122-0-10.eu.ngrok.io/token/');
+        console.log('Base URI is set');
+
+        console.log('Finish');
 
         callback(0);
     } 

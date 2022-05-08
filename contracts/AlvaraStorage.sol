@@ -76,6 +76,11 @@ contract AlvaraStorage is VRFConsumerBase, ERC721, Ownable
         _setBaseURI("https://alvara.io/token/");
     }
 
+    function setBaseURI(string memory uri) public onlyOwner
+    {
+        _setBaseURI(uri);
+    }
+
     function requestVRFRandomness() public onlyOwner returns (bytes32 requestId)
     {
         require(curCombNumber[0] != 0, "Already generated!");
